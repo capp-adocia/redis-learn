@@ -1,0 +1,7 @@
+C:/Application/SourceAnalyzing/redis/build/CMakeFiles/hiredis.dir
+C:/Application/SourceAnalyzing/redis/build/CMakeFiles/edit_cache.dir
+C:/Application/SourceAnalyzing/redis/build/CMakeFiles/rebuild_cache.dir
+C:/Application/SourceAnalyzing/redis/build/CMakeFiles/list_install_components.dir
+C:/Application/SourceAnalyzing/redis/build/CMakeFiles/install.dir
+C:/Application/SourceAnalyzing/redis/build/CMakeFiles/install/local.dir
+C:/Application/SourceAnalyzing/redis/build/CMakeFiles/install/strip.dir

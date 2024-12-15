@@ -1,0 +1,10 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\deps\\jemalloc\\msvc\\projects",
+    "\\deps\\jemalloc\\msvc\\projects\\vc2017\\jemalloc",
+    "\\src"
+  ],
+  "SelectedNode": "\\src\\sds.h",
+  "PreviewInSolutionExplorer": false
+}
