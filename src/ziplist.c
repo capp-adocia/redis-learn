@@ -199,16 +199,16 @@
                                representing the previous entry len. */
 
 /* Different encoding/length possibilities */
-#define ZIP_STR_MASK 0xc0
-#define ZIP_INT_MASK 0x30
-#define ZIP_STR_06B (0 << 6)
-#define ZIP_STR_14B (1 << 6)
-#define ZIP_STR_32B (2 << 6)
-#define ZIP_INT_16B (0xc0 | 0<<4)
-#define ZIP_INT_32B (0xc0 | 1<<4)
-#define ZIP_INT_64B (0xc0 | 2<<4)
-#define ZIP_INT_24B (0xc0 | 3<<4)
-#define ZIP_INT_8B 0xfe
+#define ZIP_STR_MASK 0xc0           // 1100 0000
+#define ZIP_INT_MASK 0x30           // 0011 0000
+#define ZIP_STR_06B (0 << 6)        // 0000 0000
+#define ZIP_STR_14B (1 << 6)        // 0100 0000
+#define ZIP_STR_32B (2 << 6)        // 1000 0000
+#define ZIP_INT_16B (0xc0 | 0<<4)   // 1100 0000
+#define ZIP_INT_32B (0xc0 | 1<<4)   // 1101 0000
+#define ZIP_INT_64B (0xc0 | 2<<4)   // 1110 0000
+#define ZIP_INT_24B (0xc0 | 3<<4)   // 1111 0000
+#define ZIP_INT_8B 0xfe             // 1111 1110
 
 /* 4 bit integer immediate encoding |1111xxxx| with xxxx between
  * 0001 and 1101. */
@@ -222,11 +222,13 @@
 
 /* Macro to determine if the entry is a string. String entries never start
  * with "11" as most significant bits of the first byte. */
+// 如果是小于了0xc0那么就是字符串
 #define ZIP_IS_STR(enc) (((enc) & ZIP_STR_MASK) < ZIP_STR_MASK)
 
 /* Utility macros.*/
 
 /* Return total bytes a ziplist is composed of. */
+// 返回ziplist的长度
 #define ZIPLIST_BYTES(zl)       (*((uint32_t*)(zl)))
 
 /* Return the offset of the last item inside the ziplist. */
@@ -297,6 +299,7 @@ typedef struct zlentry {
 
 /* Extract the encoding from the byte pointed by 'ptr' and set it into
  * 'encoding' field of the zlentry structure. */
+// 从指针ptr指向的字节中提取编码，并将其设置为zlentry结构中的encoding字段。
 #define ZIP_ENTRY_ENCODING(ptr, encoding) do {  \
     (encoding) = (ptr[0]); \
     if ((encoding) < ZIP_STR_MASK) (encoding) &= ZIP_STR_MASK; \
@@ -368,6 +371,10 @@ unsigned int zipStoreEntryEncoding(unsigned char *p, unsigned char encoding, uns
  * The 'encoding' variable will hold the entry encoding, the 'lensize'
  * variable will hold the number of bytes required to encode the entry
  * length, and the 'len' variable will hold the entry length. */
+// ptr: 指向当前entry的指针
+// encoding: entry的编码
+// lensize: entry的长度编码所占用的字节数
+// len: entry的长度
 #define ZIP_DECODE_LENGTH(ptr, encoding, lensize, len) do {                    \
     ZIP_ENTRY_ENCODING((ptr), (encoding));                                     \
     if ((encoding) < ZIP_STR_MASK) {                                           \
@@ -420,6 +427,7 @@ unsigned int zipStorePrevEntryLength(unsigned char *p, unsigned int len) {
 
 /* Return the number of bytes used to encode the length of the previous
  * entry. The length is returned by setting the var 'prevlensize'. */
+// 返回前一个元素编码所需的字节数，并设置prevlensize变量
 #define ZIP_DECODE_PREVLENSIZE(ptr, prevlensize) do {                          \
     if ((ptr)[0] < ZIP_BIG_PREVLEN) {                                          \
         (prevlensize) = 1;                                                     \
@@ -582,7 +590,7 @@ unsigned char *ziplistNew(void) {
     ZIPLIST_TAIL_OFFSET(zl) = intrev32ifbe(ZIPLIST_HEADER_SIZE);
     ZIPLIST_LENGTH(zl) = 0;
     zl[bytes-1] = ZIP_END;
-    return zl;
+    return zl; // 这里z1就是ziplist的指针
 }
 
 /* Resize the ziplist. */
@@ -739,7 +747,7 @@ unsigned char *__ziplistDelete(unsigned char *zl, unsigned char *p, unsigned int
     return zl;
 }
 
-/* Insert item at "p". */
+// 在位置p插入字符串s
 unsigned char *__ziplistInsert(unsigned char *zl, unsigned char *p, unsigned char *s, unsigned int slen) {
     size_t curlen = intrev32ifbe(ZIPLIST_BYTES(zl)), reqlen;
     unsigned int prevlensize, prevlen = 0;
@@ -1078,7 +1086,7 @@ unsigned char *ziplistDeleteRange(unsigned char *zl, int index, unsigned int num
 
 /* Compare entry pointer to by 'p' with 'sstr' of length 'slen'. */
 /* Return 1 if equal. */
-unsigned int ziplistCompare(unsigned char *p, unsigned char *sstr, unsigned int slen) {
+unsigned int ziplistCompare(unsigned char* p, unsigned char* sstr, unsigned int slen) {
     zlentry entry;
     unsigned char sencoding;
     long long zval, sval;
@@ -1088,16 +1096,18 @@ unsigned int ziplistCompare(unsigned char *p, unsigned char *sstr, unsigned int 
     if (ZIP_IS_STR(entry.encoding)) {
         /* Raw compare */
         if (entry.len == slen) {
-            return memcmp(p+entry.headersize,sstr,slen) == 0;
-        } else {
+            return memcmp(p + entry.headersize, sstr, slen) == 0;
+        }
+        else {
             return 0;
         }
-    } else {
+    }
+    else {
         /* Try to compare encoded values. Don't compare encoding because
          * different implementations may encoded integers differently. */
-        if (zipTryEncoding(sstr,slen,&sval,&sencoding)) {
-          zval = zipLoadInteger(p+entry.headersize,entry.encoding);
-          return zval == sval;
+        if (zipTryEncoding(sstr, slen, &sval, &sencoding)) {
+            zval = zipLoadInteger(p + entry.headersize, entry.encoding);
+            return zval == sval;
         }
     }
     return 0;
@@ -1110,18 +1120,19 @@ unsigned char *ziplistFind(unsigned char *p, unsigned char *vstr, unsigned int v
     unsigned char vencoding = 0;
     long long vll = 0;
 
-    while (p[0] != ZIP_END) {
+    while (p[0] != ZIP_END) { // 如果不是结束符
         unsigned int prevlensize, encoding, lensize, len;
         unsigned char *q;
 
-        ZIP_DECODE_PREVLENSIZE(p, prevlensize);
+        ZIP_DECODE_PREVLENSIZE(p, prevlensize); // 根据p[0]得到前一个节点字节长度大小prevlensize
         ZIP_DECODE_LENGTH(p + prevlensize, encoding, lensize, len);
-        q = p + prevlensize + lensize;
+        q = p + prevlensize + lensize; // q指向当前节点的数据部分
 
+        // 当skipcnt再次为0时会执行这里
         if (skipcnt == 0) {
             /* Compare current entry with specified entry */
-            if (ZIP_IS_STR(encoding)) {
-                if (len == vlen && memcmp(q, vstr, vlen) == 0) {
+            if (ZIP_IS_STR(encoding)) { // 如果编码是字符串
+                if (len == vlen && memcmp(q, vstr, vlen) == 0) { // 如果和vstr相等，则返回p
                     return p;
                 }
             } else {
@@ -1135,7 +1146,7 @@ unsigned char *ziplistFind(unsigned char *p, unsigned char *vstr, unsigned int v
                          * time. */
                         vencoding = UCHAR_MAX;
                     }
-                    /* Must be non-zero by now */
+                    // 必须是非零
                     assert(vencoding);
                 }
 
@@ -1151,6 +1162,7 @@ unsigned char *ziplistFind(unsigned char *p, unsigned char *vstr, unsigned int v
             }
 
             /* Reset skip count */
+            // 也就是说第一次进入必然会执行到这里
             skipcnt = skip;
         } else {
             /* Skip entry */
@@ -1158,7 +1170,7 @@ unsigned char *ziplistFind(unsigned char *p, unsigned char *vstr, unsigned int v
         }
 
         /* Move to next entry */
-        p = q + len;
+        p = q + len; // q是指向当前的字符串，len是字符串的长度，所以p指向下一个节点
     }
 
     return NULL;

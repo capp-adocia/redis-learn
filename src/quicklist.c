@@ -87,7 +87,7 @@ void _quicklistBookmarkDelete(quicklist *ql, quicklistBookmark *bm);
         (e)->sz = 0;                                                           \
     } while (0)
 
-#if __GNUC__ >= 3
+#if __GNUC__ >= 3 // 如果是GCC 3以上版本，则使用__builtin_expect()函数
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 #else
@@ -100,7 +100,7 @@ void _quicklistBookmarkDelete(quicklist *ql, quicklistBookmark *bm);
 quicklist *quicklistCreate(void) {
     struct quicklist *quicklist;
 
-    quicklist = zmalloc(sizeof(*quicklist));
+    quicklist = zmalloc(sizeof(*quicklist)); // 返回结构体指针
     quicklist->head = quicklist->tail = NULL;
     quicklist->len = 0;
     quicklist->count = 0;
@@ -483,7 +483,7 @@ REDIS_STATIC int _quicklistNodeAllowMerge(const quicklistNode *a,
 
 /* Add new entry to head node of quicklist.
  *
- * Returns 0 if used existing head.
+ * Returns 0 if used existing head. // 如果使用现有的头节点，则返回true
  * Returns 1 if new head created. */
 int quicklistPushHead(quicklist *quicklist, void *value, size_t sz) {
     quicklistNode *orig_head = quicklist->head;

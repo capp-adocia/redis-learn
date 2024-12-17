@@ -95,6 +95,7 @@ static void zmalloc_default_oom(size_t size) {
 
 static void (*zmalloc_oom_handler)(size_t) = zmalloc_default_oom;
 
+// 这种分配方式是总共分配（uint32_t字节 + 结构体的大小size），头部存储的是这个结构体的大小，然后返回结构体指针
 void *zmalloc(size_t size) {
     void *ptr = malloc(size+PREFIX_SIZE);
 
@@ -105,7 +106,7 @@ void *zmalloc(size_t size) {
 #else
     *((size_t*)ptr) = size;
     update_zmalloc_stat_alloc(size+PREFIX_SIZE);
-    return (char*)ptr+PREFIX_SIZE;
+    return (char*)ptr+PREFIX_SIZE; // 跳过头部
 #endif
 }
 

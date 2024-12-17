@@ -54,14 +54,18 @@ void memrev16(void *p) {
     x[1] = t;
 }
 
-/* Toggle the 32 bit unsigned integer pointed by *p from little endian to
- * big endian */
+// 将内存中的数据大小端进行转换 32 bit unsigned integer pointed 32 / 8 = 4 字节
+// 比如 0x 12 34 56 78
+// 小端存储 0x 78 56 34 12
+// 大端存储 0x 12 34 56 78
+// 其实就是将第一个字节和最后一个字节交换位置，第二个字节和倒数第二个字节交换位置
 void memrev32(void *p) {
     unsigned char *x = p, t;
 
     t = x[0];
     x[0] = x[3];
     x[3] = t;
+
     t = x[1];
     x[1] = x[2];
     x[2] = t;
