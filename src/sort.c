@@ -30,7 +30,7 @@
 
 
 #include "server.h"
-#include "pqsort.h" /* Partial qsort for SORT+LIMIT */
+#include "pqsort.h" /* ∑÷∆¨≈≈–Ú qsort for SORT + LIMIT */
 #include <math.h> /* isnan() */
 
 zskiplistNode* zslGetElementByRank(zskiplist *zsl, unsigned long rank);

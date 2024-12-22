@@ -55,12 +55,12 @@
  * enable/disable resizing of the hash table as needed. This is very important
  * for Redis, as we use copy-on-write and don't want to move too much memory
  * around when there is a child performing saving operations.
- *
+ * // COW技术
  * Note that even when dict_can_resize is set to 0, not all resizes are
  * prevented: a hash table is still allowed to grow if the ratio between
  * the number of elements and the buckets > dict_force_resize_ratio. */
-static int dict_can_resize = 1;
-static unsigned int dict_force_resize_ratio = 5;
+static int dict_can_resize = 1; // 是否允许dict扩容
+static unsigned int dict_force_resize_ratio = 5; // 扩容因子
 
 /* -------------------------- private prototypes ---------------------------- */
 
@@ -274,10 +274,9 @@ int dictAdd(dict *d, void *key, void *val)
 }
 
 /* Low level add or find:
- * This function adds the entry but instead of setting a value returns the
- * dictEntry structure to the user, that will make sure to fill the value
- * field as he wishes.
- *
+ * 这个方法会添加一个元素到目标哈希表中，
+ * 但不是设置一个值，而是返回一个dictEntry结构体指针给用户，
+ * 用户会确保按照自己的意愿填充值字段。
  * This function is also directly exposed to the user API to be called
  * mainly in order to store non-pointers inside the hash value, example:
  *
@@ -286,11 +285,11 @@ int dictAdd(dict *d, void *key, void *val)
  *
  * Return values:
  *
- * If key already exists NULL is returned, and "*existing" is populated
- * with the existing entry if existing is not NULL.
- *
- * If key was added, the hash entry is returned to be manipulated by the caller.
+ * 如果键已经存在，返回NULL，如果existing不为NULL，则existing被填充为现有的entry。
+ * 如果键不存在，返回新创建的entry。
  */
+// existing 输出参数 这个参数用于输出一个key已存在的条目
+// 当返回值为null时，表示key值存在
 dictEntry *dictAddRaw(dict *d, void *key, dictEntry **existing)
 {
     long index;
@@ -299,19 +298,18 @@ dictEntry *dictAddRaw(dict *d, void *key, dictEntry **existing)
 
     if (dictIsRehashing(d)) _dictRehashStep(d);
 
-    /* Get the index of the new element, or -1 if
-     * the element already exists. */
+    /* 获取新元素的索引，如果这个元素已存在返回为-1，退出这个函数 */
     if ((index = _dictKeyIndex(d, key, dictHashKey(d,key), existing)) == -1)
         return NULL;
-
+    // 只有key不存在时，才创建新的entry
     /* Allocate the memory and store the new entry.
      * Insert the element in top, with the assumption that in a database
      * system it is more likely that recently added entries are accessed
      * more frequently. */
-    ht = dictIsRehashing(d) ? &d->ht[1] : &d->ht[0];
+    ht = dictIsRehashing(d) ? &d->ht[1] : &d->ht[0]; // 如果正在rehash，则插入到ht[1]中，否则插入到ht[0]中
     entry = zmalloc(sizeof(*entry));
-    entry->next = ht->table[index];
-    ht->table[index] = entry;
+    entry->next = ht->table[index]; // 将新元素插入到链表的头部
+    ht->table[index] = entry; // 设置当前桶的第一个元素为新元素
     ht->used++;
 
     /* Set the hash entry fields. */
@@ -331,11 +329,12 @@ int dictReplace(dict *d, void *key, void *val)
     /* Try to add the element. If the key
      * does not exists dictAdd will succeed. */
     entry = dictAddRaw(d,key,&existing);
+    // 如果entry不为null，表示key不存在，直接设置值
     if (entry) {
         dictSetVal(d, entry, val);
         return 1;
     }
-
+    // 如果entry为null，表示key已存在，则替换值
     /* Set the new value and free the old one. Note that it is important
      * to do that in this order, as the value may just be exactly the same
      * as the previous one. In this context, think to reference counting,
@@ -1003,10 +1002,11 @@ static long _dictKeyIndex(dict *d, const void *key, uint64_t hash, dictEntry **e
     if (_dictExpandIfNeeded(d) == DICT_ERR)
         return -1;
     for (table = 0; table <= 1; table++) {
-        idx = hash & d->ht[table].sizemask;
+        idx = hash & d->ht[table].sizemask; // hash 与 sizemask 相与，得到桶的索引，sizemask是size-1
         /* Search if this slot does not already contain the given key */
-        he = d->ht[table].table[idx];
+        he = d->ht[table].table[idx]; // 第idx个桶的头节点
         while(he) {
+            // 如果找到了那么就返回-1
             if (key==he->key || dictCompareKeys(d, key, he->key)) {
                 if (existing) *existing = he;
                 return -1;

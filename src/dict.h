@@ -1,5 +1,6 @@
-/* Hash Tables Implementation.
- *
+/* 
+ * 哈希表的实现，使用链地址法解决冲突
+ * 链地址法：通过哈希函数来计算桶的哈希值，来选择该桶
  * This file implements in-memory hash tables with insert/del/replace/find/
  * get-random-element operations. Hash tables will auto-resize if needed
  * tables of power of two in size are used, collisions are handled by
@@ -44,6 +45,9 @@
 /* Unused arguments generate annoying warnings... */
 #define DICT_NOTUSED(V) ((void) V)
 
+//链地址法解决哈希冲突
+
+// key value 的哈希表桶
 typedef struct dictEntry {
     void *key;
     union {
@@ -55,6 +59,18 @@ typedef struct dictEntry {
     struct dictEntry *next;
 } dictEntry;
 
+// 哈希表，包含了一个指向dictEntry的指针数组table，通过table可以访问各个桶的内容
+/*
+    [dictht]-----------{ [dictEntry*]-[dictEntry*]-[dictEntry*]-... }
+    [dictEntry*]-----{ [key] [val] [dictEntry* next] }->{ [key] [val] [dictEntry* next] }->{ [key] [val] [dictEntry* next] }->...
+*/
+typedef struct dictht {
+    dictEntry **table;
+    unsigned long size;
+    unsigned long sizemask;
+    unsigned long used;
+} dictht;
+
 typedef struct dictType {
     uint64_t (*hashFunction)(const void *key);
     void *(*keyDup)(void *privdata, const void *key);
@@ -64,18 +80,10 @@ typedef struct dictType {
     void (*valDestructor)(void *privdata, void *obj);
 } dictType;
 
-/* This is our hash table structure. Every dictionary has two of this as we
- * implement incremental rehashing, for the old to the new table. */
-typedef struct dictht {
-    dictEntry **table;
-    unsigned long size;
-    unsigned long sizemask;
-    unsigned long used;
-} dictht;
-
+// dict 是对外的接口，包含两个dictht，一个用于正常操作，一个用于rehash
 typedef struct dict {
-    dictType *type;
-    void *privdata;
+    dictType* type;
+    void* privdata;
     dictht ht[2];
     long rehashidx; /* rehashing not in progress if rehashidx == -1 */
     unsigned long iterators; /* number of iterators currently running */
@@ -183,8 +191,8 @@ uint64_t dictGetHash(dict *d, const void *key);
 dictEntry **dictFindEntryRefByPtrAndHash(dict *d, const void *oldptr, uint64_t hash);
 
 /* Hash table types */
-extern dictType dictTypeHeapStringCopyKey;
-extern dictType dictTypeHeapStrings;
-extern dictType dictTypeHeapStringCopyKeyValue;
+extern dictType dictTypeHeapStringCopyKey; // key是字符串，并且是拷贝的
+extern dictType dictTypeHeapStrings; // key是字符串，但是不拷贝
+extern dictType dictTypeHeapStringCopyKeyValue; // key和value都是字符串，并且都是拷贝的
 
 #endif /* __DICT_H */

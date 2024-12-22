@@ -31,7 +31,7 @@
 #ifndef __INTSET_H
 #define __INTSET_H
 #include <stdint.h>
-
+// 为了防止存储数字而浪费空间，intset使用不同的编码来存储数字
 typedef struct intset {
     uint32_t encoding;
     uint32_t length;

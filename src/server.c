@@ -3019,7 +3019,7 @@ void initServer(void) {
     if (server.arch_bits == 32 && server.maxmemory == 0) {
         serverLog(LL_WARNING,"Warning: 32 bit instance detected but no memory limit set. Setting 3 GB maxmemory limit with 'noeviction' policy now.");
         server.maxmemory = 3072LL*(1024*1024); /* 3 GB */
-        server.maxmemory_policy = MAXMEMORY_NO_EVICTION;
+        server.maxmemory_policy = MAXMEMORY_NO_EVICTION; 
     }
 
     if (server.cluster_enabled) clusterInit();

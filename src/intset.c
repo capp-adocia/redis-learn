@@ -53,23 +53,40 @@ static uint8_t _intsetValueEncoding(int64_t v) {
 
 /* Return the value at pos, given an encoding. */
 static int64_t _intsetGetEncoded(intset *is, int pos, uint8_t enc) {
-    int64_t v64;
-    int32_t v32;
-    int16_t v16;
-
-    if (enc == INTSET_ENC_INT64) {
-        memcpy(&v64,((int64_t*)is->contents)+pos,sizeof(v64));
+    // 自己优化过的判断语句
+    switch (enc)
+    {
+    case INTSET_ENC_INT64:
+    {
+        memcpy(&v64, ((int64_t*)is->contents) + pos, sizeof(int64_t));
         memrev64ifbe(&v64);
         return v64;
-    } else if (enc == INTSET_ENC_INT32) {
-        memcpy(&v32,((int32_t*)is->contents)+pos,sizeof(v32));
+    }
+    case INTSET_ENC_INT32:
+    {
+        memcpy(&v32, ((int32_t*)is->contents) + pos, sizeof(int32_t));
         memrev32ifbe(&v32);
         return v32;
-    } else {
-        memcpy(&v16,((int16_t*)is->contents)+pos,sizeof(v16));
+    }
+    default: // INTSET_ENC_INT16
+        memcpy(&v16, ((int16_t*)is->contents) + pos, sizeof(int16_t));
         memrev16ifbe(&v16);
         return v16;
     }
+
+    //if (enc == INTSET_ENC_INT64) {
+    //    memcpy(&v64,((int64_t*)is->contents)+pos,sizeof(int64_t));
+    //    memrev64ifbe(&v64);
+    //    return v64;
+    //} else if (enc == INTSET_ENC_INT32) {
+    //    memcpy(&v32,((int32_t*)is->contents)+pos,sizeof(int32_t));
+    //    memrev32ifbe(&v32);
+    //    return v32;
+    //} else { // 16
+    //    memcpy(&v16,((int16_t*)is->contents)+pos,sizeof(int16_t));
+    //    memrev16ifbe(&v16);
+    //    return v16;
+    //}
 }
 
 /* Return the value at pos, using the configured encoding. */
@@ -112,6 +129,7 @@ static intset *intsetResize(intset *is, uint32_t len) {
  * sets "pos" to the position of the value within the intset. Return 0 when
  * the value is not present in the intset and sets "pos" to the position
  * where "value" can be inserted. */
+// 二分查找
 static uint8_t intsetSearch(intset *is, int64_t value, uint32_t *pos) {
     int min = 0, max = intrev32ifbe(is->length)-1, mid = -1;
     int64_t cur = -1;
