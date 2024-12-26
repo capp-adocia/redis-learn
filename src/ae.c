@@ -444,7 +444,8 @@ int aeProcessEvents(aeEventLoop *eventLoop, int flags)
 
         /* Call the multiplexing API, will return only on timeout or when
          * some event fires. */
-        numevents = aeApiPoll(eventLoop, tvp);
+        /* 调用io多路复用，用最少的物理资源，达到最高的数据传输量 */
+        numevents = aeApiPoll(eventLoop, tvp); // 使cpu睡眠
 
         /* After sleep callback. */
         if (eventLoop->aftersleep != NULL && flags & AE_CALL_AFTER_SLEEP)
@@ -508,7 +509,7 @@ int aeProcessEvents(aeEventLoop *eventLoop, int flags)
     if (flags & AE_TIME_EVENTS)
         processed += processTimeEvents(eventLoop);
 
-    return processed; /* return the number of processed file/time events */
+    return processed; /* 返回已经处理了的文件或者时间事件个数 */
 }
 
 /* Wait for milliseconds until the given file descriptor becomes

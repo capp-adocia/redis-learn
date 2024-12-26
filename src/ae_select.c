@@ -81,8 +81,8 @@ static int aeApiPoll(aeEventLoop *eventLoop, struct timeval *tvp) {
     memcpy(&state->_rfds,&state->rfds,sizeof(fd_set));
     memcpy(&state->_wfds,&state->wfds,sizeof(fd_set));
 
-    retval = select(eventLoop->maxfd+1,
-                &state->_rfds,&state->_wfds,NULL,tvp);
+    retval = select(eventLoop->maxfd+1, &state->_rfds,&state->_wfds,NULL,tvp);
+    // retval 是返回的文件描述符数量
     if (retval > 0) {
         for (j = 0; j <= eventLoop->maxfd; j++) {
             int mask = 0;
@@ -98,7 +98,7 @@ static int aeApiPoll(aeEventLoop *eventLoop, struct timeval *tvp) {
             numevents++;
         }
     }
-    return numevents;
+    return numevents; // 返回文件描述符数量
 }
 
 static char *aeApiName(void) {
